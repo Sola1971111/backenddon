@@ -1,0 +1,15 @@
+# Render deployment config (optional but helpful)
+# See: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: kindred-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      # The rest must be set manually in Render dashboard:
+      # DATABASE_URL, ADMIN_USERNAME, ADMIN_PASSWORD, JWT_SECRET, FRONTEND_ORIGIN
