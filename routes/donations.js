@@ -44,6 +44,8 @@ const rowToDonation = (r) => ({
   message: r.message,
   anonymous: r.anonymous,
   status: r.status,
+  paymentMethod: r.payment_method || 'manual',
+  paystackReference: r.paystack_reference || null,
   receiptUrl: r.receipt_filename ? `/api/donations/${r.id}/receipt` : null,
   createdAt: Number(r.created_at),
   approvedAt: r.approved_at ? Number(r.approved_at) : null,
@@ -71,8 +73,8 @@ router.post('/', upload.single('receipt'), async (req, res, next) => {
     const id = 'd_' + crypto.randomBytes(6).toString('hex');
     await db.query(
       `INSERT INTO donations
-       (id, campaign_id, donor_name, email, amount, message, anonymous, receipt_filename, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)`,
+       (id, campaign_id, donor_name, email, amount, message, anonymous, receipt_filename, status, payment_method, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', 'manual', $9)`,
       [
         id, b.campaignId, b.donorName.trim(), b.email.trim(),
         Math.max(1, Math.floor(Number(b.amount))),

@@ -60,11 +60,29 @@ async function initSchema() {
       anonymous BOOLEAN NOT NULL DEFAULT FALSE,
       receipt_filename TEXT,
       status TEXT NOT NULL DEFAULT 'pending',
+      payment_method TEXT NOT NULL DEFAULT 'manual',
+      paystack_reference TEXT,
       created_at BIGINT NOT NULL,
       approved_at BIGINT,
       rejected_at BIGINT,
       FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
     );
+  `);
+
+  // Migration for existing databases — add columns if they don't exist yet.
+  // (CREATE TABLE IF NOT EXISTS skips this if table already existed.)
+  await db.query(`
+    ALTER TABLE donations
+    ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'manual'
+  `);
+  await db.query(`
+    ALTER TABLE donations
+    ADD COLUMN IF NOT EXISTS paystack_reference TEXT
+  `);
+  await db.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_donations_paystack_ref
+    ON donations(paystack_reference)
+    WHERE paystack_reference IS NOT NULL
   `);
 
   await db.query(`
@@ -140,6 +158,17 @@ async function seedBankSettings() {
   console.log('✓ Default bank settings seeded');
 }
 
+async function seedPaymentMethodSetting() {
+  const existing = await db.query("SELECT value FROM settings WHERE key = 'payment_method'");
+  if (existing.rows.length > 0) return;
+
+  await db.query(
+    "INSERT INTO settings (key, value) VALUES ('payment_method', $1)",
+    ['manual']  // Default to manual so nothing changes for existing site
+  );
+  console.log('✓ Default payment method set to "manual"');
+}
+
 async function seedCampaigns() {
   const result = await db.query('SELECT COUNT(*)::int AS n FROM campaigns');
   if (result.rows[0].n > 0) return;
@@ -202,6 +231,7 @@ async function init() {
   await initSchema();
   await seedAdmin();
   await seedBankSettings();
+  await seedPaymentMethodSetting();
   await seedCampaigns();
 }
 

@@ -73,4 +73,34 @@ router.get('/stats', requireAdmin, async (req, res, next) => {
   }
 });
 
+// GET /api/settings/payment-method — public (frontend needs to know which to show)
+router.get('/payment-method', async (req, res, next) => {
+  try {
+    const result = await db.query("SELECT value FROM settings WHERE key = 'payment_method'");
+    const method = result.rows[0]?.value || 'manual';
+    res.json({ method });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/settings/payment-method — admin only
+router.put('/payment-method', requireAdmin, async (req, res, next) => {
+  try {
+    const { method } = req.body || {};
+    if (!['manual', 'paystack'].includes(method)) {
+      return res.status(400).json({ error: 'method must be "manual" or "paystack"' });
+    }
+
+    await db.query(`
+      INSERT INTO settings (key, value) VALUES ('payment_method', $1)
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `, [method]);
+
+    res.json({ method });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
