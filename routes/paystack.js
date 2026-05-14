@@ -76,7 +76,7 @@ router.post('/initialize', async (req, res, next) => {
         email: b.email.trim(),
         amount: amountKobo,
         reference,
-        callback_url: `${frontendOrigin}/?paystack_ref=${reference}`,
+        callback_url: `${frontendOrigin}/thanks?paystack_ref=${reference}`,
         metadata: {
           donation_id: donationId,
           campaign_id: b.campaignId,
