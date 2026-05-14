@@ -23,6 +23,14 @@ app.use(cors({
   credentials: true
 }));
 
+// IMPORTANT: Paystack webhook needs raw body for signature verification.
+// Mount it with express.raw() BEFORE the global express.json() runs.
+app.use(
+  '/api/paystack/webhook',
+  express.raw({ type: 'application/json', limit: '1mb' })
+);
+
+// All other routes use parsed JSON
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,6 +40,7 @@ app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/donations', require('./routes/donations'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/paystack', require('./routes/paystack'));
 
 // Health check
 app.get('/api/health', (req, res) => {
